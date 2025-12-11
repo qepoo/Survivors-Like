@@ -36,8 +36,8 @@ public class CharacterAuthoring : MonoBehaviour
     {
         public override void Bake(CharacterAuthoring authoring)
         {
-            var entity = GetEntity(TransformUsageFlags.Dynamic);
-            AddComponent<InitializeCharacterFlag>(entity);
+            var entity = GetEntity(TransformUsageFlags.Dynamic); //registrates new entity
+            AddComponent<InitializeCharacterFlag>(entity); //adds a component to an entity
             AddComponent<CharacterMoveDirection>(entity);
 
             AddComponent(entity, new CharacterMoveSpeed { 
@@ -52,8 +52,8 @@ public class CharacterAuthoring : MonoBehaviour
     }
 }
 
-[UpdateInGroup(typeof(InitializationSystemGroup))]
-public partial struct InitializeCharacter : ISystem
+[UpdateInGroup(typeof(InitializationSystemGroup))] //system is being executed at the system initialization period
+public partial struct InitializeCharacter : ISystem //system turns off the property rsponsible for falling behind the texture
 {
     public void OnUpdate(ref SystemState state)
     { 
@@ -70,14 +70,14 @@ public partial struct CharacterMovementSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (velocity, facingDirection, direction, speed) in SystemAPI.Query<RefRW<PhysicsVelocity>, RefRW<FacingDirectionOverride>, CharacterMoveDirection, CharacterMoveSpeed>())
+        foreach (var (velocity, facingDirection, moveDirection, speed) in SystemAPI.Query<RefRW<PhysicsVelocity>, RefRW<FacingDirectionOverride>, CharacterMoveDirection, CharacterMoveSpeed>())
         {
-            var movement2D = speed.Value * direction.Value;
+            var movement2D = speed.Value * moveDirection.Value;
             velocity.ValueRW.Linear = new float3(movement2D, 0f);
 
             if (math.abs(movement2D.x) > 0.15f)
             {
-                facingDirection.ValueRW.Value = math.sign(movement2D.x);
+                facingDirection.ValueRW.Value = math.sign(movement2D.x); //if there is any velocity, facing direction is being updated due to the actual moveDirection
             }
         }
     }
@@ -89,11 +89,11 @@ public partial struct GlobalTimeUpdateSystem : ISystem
 
     public void OnCreate(ref SystemState state)
     {
-        globalTimeShaderPropertyID = Shader.PropertyToID("_GlobalTime");
+        globalTimeShaderPropertyID = Shader.PropertyToID("_GlobalTime"); //sets a shader property ID as a value to an int variable
     }
 
     public void OnUpdate(ref SystemState state)
     {
-        Shader.SetGlobalFloat(globalTimeShaderPropertyID, (float)SystemAPI.Time.ElapsedTime);
+        Shader.SetGlobalFloat(globalTimeShaderPropertyID, (float)SystemAPI.Time.ElapsedTime); //timer responsible for animation update that ticks from the start of the world
     }
 }
