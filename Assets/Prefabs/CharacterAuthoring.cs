@@ -1,36 +1,53 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using Unity.Mathematics;
-using Unity.Entities;
-using Unity.Physics;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Rendering;
-using System;
+using Unity.Transforms;
+using UnityEngine;
+using UnityEngine.Rendering.VirtualTexturing;
+using UnityEngine.U2D.Animation;
 
 public struct InitializeCharacterFlag : IComponentData, IEnableableComponent { }
 
 public struct CharacterMoveDirection : IComponentData {
     public float2 Value;
 }
+public struct AimDirection : IComponentData
+{
+    public float Value;
+}
 
 public struct CharacterMoveSpeed : IComponentData {
     public float Value;
 }
 
-[MaterialProperty("_FacingDirection")]
-public struct FacingDirectionOverride : IComponentData {
-    public float Value;
+public struct MovementState : IComponentData {
+    public short Value;
 }
 
-[MaterialProperty("_AnimationIndex")]
-    public struct AnimationIndexOverride : IComponentData {
+public struct AnimationFrame : IComponentData {
+    public short Value;
+}
+
+public struct AnimationUpdateRate : IComponentData {
+    public float Value; 
+}
+
+public struct AnimationTimeCounter : IComponentData {
     public float Value;
 }
 
 public class CharacterAuthoring : MonoBehaviour
 {
     public float MoveSpeed;
+    public float FrameUpdateRate;
+    public SpriteResolver spriteResolver;
+    public SpriteLibrary spriteLibrary; 
 
     private class Baker : Baker<CharacterAuthoring>
     {
@@ -39,15 +56,30 @@ public class CharacterAuthoring : MonoBehaviour
             var entity = GetEntity(TransformUsageFlags.Dynamic); //registrates new entity
             AddComponent<InitializeCharacterFlag>(entity); //adds a component to an entity
             AddComponent<CharacterMoveDirection>(entity);
+            AddComponent<AimDirection>(entity);
 
             AddComponent(entity, new CharacterMoveSpeed { 
                 Value = authoring.MoveSpeed 
             });
 
-            AddComponent(entity, new FacingDirectionOverride
-            {
-                Value = 1
+            AddComponent(entity, new MovementState {
+                Value = 0
             });
+
+            AddComponent(entity, new AnimationFrame {
+                Value = 0
+            });
+
+            AddComponent(entity, new AnimationUpdateRate {
+                Value = authoring.FrameUpdateRate
+            });
+
+            AddComponent(entity, new AnimationTimeCounter {
+                Value = 0
+            });
+
+            AddComponentObject(entity, authoring.spriteResolver);
+            AddComponentObject(entity, authoring.spriteLibrary);
         }
     }
 }
@@ -70,30 +102,42 @@ public partial struct CharacterMovementSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (velocity, facingDirection, moveDirection, speed) in SystemAPI.Query<RefRW<PhysicsVelocity>, RefRW<FacingDirectionOverride>, CharacterMoveDirection, CharacterMoveSpeed>())
+        foreach (var (velocity, moveDirection, speed, moveState, facingDirection, entity) in SystemAPI.Query<RefRW<PhysicsVelocity>, CharacterMoveDirection, CharacterMoveSpeed, RefRW<MovementState>, AimDirection>().WithEntityAccess())
         {
             var movement2D = speed.Value * moveDirection.Value;
             velocity.ValueRW.Linear = new float3(movement2D, 0f);
 
-            if (math.abs(movement2D.x) > 0.15f)
-            {
-                facingDirection.ValueRW.Value = math.sign(movement2D.x); //if there is any velocity, facing direction is being updated due to the actual moveDirection
-            }
+            float movementMagnitude = math.sqrt(math.square(movement2D.x) + math.square(movement2D.y));
+            moveState.ValueRW.Value = (short)(math.abs(movementMagnitude) > (0.15f) ? 1 : 0);
+
+            var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
+            Debug.Log($"Aim: {facingDirection.Value}");
+            sprtRenderer.flipX = (facingDirection.Value < 0);
         }
     }
 }
 
-public partial struct GlobalTimeUpdateSystem : ISystem
+[UpdateInGroup(typeof(PresentationSystemGroup))]
+public partial struct AnimationUpdateSystem : ISystem
 {
-    private static int globalTimeShaderPropertyID;
-
-    public void OnCreate(ref SystemState state)
-    {
-        globalTimeShaderPropertyID = Shader.PropertyToID("_GlobalTime"); //sets a shader property ID as a value to an int variable
-    }
-
     public void OnUpdate(ref SystemState state)
     {
-        Shader.SetGlobalFloat(globalTimeShaderPropertyID, (float)SystemAPI.Time.ElapsedTime); //timer responsible for animation update that ticks from the start of the world
+        foreach (var (animFrame, timeCntr, moveState, frameUpdateRate, entity) in SystemAPI.Query<RefRW<AnimationFrame>, RefRW<AnimationTimeCounter>,  RefRO<MovementState>, RefRO<AnimationUpdateRate>>().WithEntityAccess())
+        {
+            var resolver = SystemAPI.ManagedAPI.GetComponent<SpriteResolver>(entity);
+
+            timeCntr.ValueRW.Value += SystemAPI.Time.DeltaTime;
+            float animTreshold = 1f / frameUpdateRate.ValueRO.Value;
+
+            if (timeCntr.ValueRW.Value > animTreshold)
+            {
+                animFrame.ValueRW.Value = (short)((animFrame.ValueRW.Value + 1) % 6);
+                timeCntr.ValueRW.Value -= animTreshold;
+            }
+
+            string category = moveState.ValueRO.Value == 0 ? "Idle" : "Run";
+
+            resolver.SetCategoryAndLabel($"{category}", $"{category}_{animFrame.ValueRW.Value}");
+        }
     }
 }

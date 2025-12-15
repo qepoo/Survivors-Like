@@ -191,9 +191,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterAuthoring
   MoveSpeed: 1.75
-  FrameUpdateRate: 8
   spriteResolver: {fileID: 684002329}
-  spriteLibrary: {fileID: 684002328}
 --- !u!54 &684002326
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -259,10 +257,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8b1ae4e4e52b34ea557c1c11e076fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteResolver
-  m_CategoryHash: 0.009161512
+  m_CategoryHash: 3.798446e-37
   m_labelHash: 7.451674e-19
   m_SpriteKey: 0
-  m_SpriteHash: 970340700
+  m_SpriteHash: 731611107
 --- !u!212 &684002330
 SpriteRenderer:
   m_ObjectHideFlags: 0

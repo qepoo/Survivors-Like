@@ -1,13 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using Unity.Entities;
-using Unity.VisualScripting;
-using Unity.Mathematics;
-using System;
-using Unity.VisualScripting.FullSerializer;
 using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
+using Unity.VisualScripting;
+using Unity.VisualScripting.FullSerializer;
+using UnityEngine;
+using UnityEngine.U2D.Animation;
 
 public struct PlayerTag : IComponentData { }
 
@@ -36,7 +37,7 @@ public partial struct CameraInitializationSystem : ISystem
 {
     public void OnCreate(ref SystemState state)
     {
-        state.RequireForUpdate<InitializeCameraTargetTag>(); //requiered components for a systm to run
+        state.RequireForUpdate<InitializeCameraTargetTag>(); //requiered components for a system to run
     }
 
     public void OnUpdate(ref SystemState state)
@@ -45,7 +46,7 @@ public partial struct CameraInitializationSystem : ISystem
         var CameraTargetTransform = CameraTargetSingleton.Instance.transform;
 
         var ecb = new EntityCommandBuffer(state.WorldUpdateAllocator);
-        foreach (var (cameraTarget, entity) in SystemAPI.Query<RefRW<CameraTarget>>().WithAll<InitializeCameraTargetTag, PlayerTag>().WithEntityAccess()) //Query retrieves an enity with cameraTarget transform, and an entity that contains both components above
+        foreach (var (cameraTarget, entity) in SystemAPI.Query<RefRW<CameraTarget>>().WithAll<InitializeCameraTargetTag, PlayerTag>().WithEntityAccess()) //Query retrieves an entity with cameraTarget transform, and an entity that contains both components above
         { 
             cameraTarget.ValueRW.CameraTransform = CameraTargetTransform;
             ecb.RemoveComponent<InitializeCameraTargetTag>(entity); //doesnt remove a comp, yet sends a request into ecb to do so
@@ -55,7 +56,7 @@ public partial struct CameraInitializationSystem : ISystem
     }
 }
 
-[UpdateAfter(typeof(TransformSystemGroup))] //system is being executed AFTER all transforms updates
+[UpdateAfter(typeof(TransformSystemGroup))] //system is being executed AFTER all transforms update
 public partial struct MoveCameraTarget : ISystem 
 { 
     public void OnUpdate(ref SystemState state) 
@@ -87,10 +88,16 @@ public partial class PlayerInputSystem : SystemBase
 
     protected override void OnUpdate()
     {
-        var currentInput = (float2)_input.Player.Move.ReadValue<Vector2>();
+        var movementInput = (float2)_input.Player.Move.ReadValue<Vector2>();
         foreach (var direction in SystemAPI.Query<RefRW<CharacterMoveDirection>>().WithAll<PlayerTag>()) //retrives entities with both components
         {
-            direction.ValueRW.Value = currentInput;
+            direction.ValueRW.Value = movementInput;
+        }
+
+        var aimInput = _input.Player.Aim.ReadValue<float>();
+        foreach (var aim in SystemAPI.Query<RefRW<AimDirection>>().WithAll<PlayerTag>())
+        { 
+            aim.ValueRW.Value = aimInput;
         }
     }
 }

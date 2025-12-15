@@ -132,9 +132,9 @@ GameObject:
   - component: {fileID: 684002329}
   - component: {fileID: 684002326}
   - component: {fileID: 684002321}
+  - component: {fileID: 684002328}
   - component: {fileID: 684002325}
   - component: {fileID: 684002327}
-  - component: {fileID: 684002328}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -161,8 +161,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.486438, y: 0.68215275, z: 0.15}
-  m_Center: {x: -0.084856845, y: -0.08845775, z: 0}
+  m_Size: {x: 0.6727456, y: 1.1391412, z: 0.15}
+  m_Center: {x: -0.13143384, y: -0.030214222, z: 0}
 --- !u!4 &684002324
 Transform:
   m_ObjectHideFlags: 0
@@ -173,7 +173,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.3136, y: -0.1963, z: 0.15}
-  m_LocalScale: {x: 0.46, y: 0.4782139, z: 0.52698934}
+  m_LocalScale: {x: 0.4, y: 0.41583818, z: 0.4582516}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -191,9 +191,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterAuthoring
   MoveSpeed: 1.75
-  FrameUpdateRate: 8
-  spriteResolver: {fileID: 684002329}
-  spriteLibrary: {fileID: 684002328}
+  spriteResolver: {fileID: 0}
 --- !u!54 &684002326
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -259,10 +257,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8b1ae4e4e52b34ea557c1c11e076fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteResolver
-  m_CategoryHash: 0.009161512
-  m_labelHash: 7.451674e-19
+  m_CategoryHash: 1.9692461e-16
+  m_labelHash: 8.6934264e-36
   m_SpriteKey: 0
-  m_SpriteHash: 970340700
+  m_SpriteHash: 836440214
 --- !u!212 &684002330
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -310,7 +308,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -7355460615089035379, guid: b5d8b42a4f403e748b53d80c6bcf6663, type: 3}
+  m_Sprite: {fileID: 3054439076135632626, guid: b5d8b42a4f403e748b53d80c6bcf6663, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
