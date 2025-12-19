@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -18,6 +19,12 @@ public struct CameraTarget : IComponentData {
     public UnityObjectRef<Transform> CameraTransform;
 }
 
+public struct InitializeAimPointTag : IComponentData { }
+
+public struct AimPoint : IComponentData {
+    public UnityObjectRef<Transform> AimTransform;
+}
+
 public class PlayerAuthoring : MonoBehaviour
 {
     private class Baker : Baker<PlayerAuthoring>
@@ -26,11 +33,16 @@ public class PlayerAuthoring : MonoBehaviour
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent<PlayerTag>(entity);
+            
             AddComponent<InitializeCameraTargetTag>(entity);
             AddComponent<CameraTarget>(entity);
+
+            AddComponent<InitializeAimPointTag>(entity);
+            AddComponent<AimPoint>(entity);
         }
     }   
 }
+
 
 [UpdateInGroup(typeof(InitializationSystemGroup))]
 public partial struct CameraInitializationSystem : ISystem
@@ -56,6 +68,7 @@ public partial struct CameraInitializationSystem : ISystem
     }
 }
 
+
 [UpdateAfter(typeof(TransformSystemGroup))] //system is being executed AFTER all transforms update
 public partial struct MoveCameraTarget : ISystem 
 { 
@@ -69,6 +82,25 @@ public partial struct MoveCameraTarget : ISystem
         }
     }
 }
+
+
+[UpdateInGroup(typeof(InitializationSystemGroup))]
+public partial struct AimPointInitializationSystem : ISystem 
+{
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<InitializeAimPointTag>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        foreach (var ent in SystemAPI.Query<PlayerTag>().WithEntityAccess())
+        {
+            
+        }
+    }
+}
+
 
 public partial class PlayerInputSystem : SystemBase
 {

@@ -111,7 +111,7 @@ public partial struct CharacterMovementSystem : ISystem
             moveState.ValueRW.Value = (short)(math.abs(movementMagnitude) > (0.15f) ? 1 : 0);
 
             var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
-            Debug.Log($"Aim: {facingDirection.Value}");
+
             sprtRenderer.flipX = (facingDirection.Value < 0);
         }
     }
