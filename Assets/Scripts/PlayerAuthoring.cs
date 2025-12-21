@@ -10,6 +10,7 @@ using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 using UnityEngine.U2D.Animation;
+using static UnityEngine.EventSystems.EventTrigger;
 
 public struct PlayerTag : IComponentData { }
 
@@ -19,10 +20,8 @@ public struct CameraTarget : IComponentData {
     public UnityObjectRef<Transform> CameraTransform;
 }
 
-public struct InitializeAimPointTag : IComponentData { }
-
-public struct AimPoint : IComponentData {
-    public UnityObjectRef<Transform> AimTransform;
+public struct CursorWorldPosition : IComponentData {
+    public float2 Value;
 }
 
 public class PlayerAuthoring : MonoBehaviour
@@ -37,8 +36,7 @@ public class PlayerAuthoring : MonoBehaviour
             AddComponent<InitializeCameraTargetTag>(entity);
             AddComponent<CameraTarget>(entity);
 
-            AddComponent<InitializeAimPointTag>(entity);
-            AddComponent<AimPoint>(entity);
+            AddComponent<CursorWorldPosition>(entity);
         }
     }   
 }
@@ -69,7 +67,7 @@ public partial struct CameraInitializationSystem : ISystem
 }
 
 
-[UpdateAfter(typeof(TransformSystemGroup))] //system is being executed AFTER all transforms update
+[UpdateAfter(typeof(TransformSystemGroup    ))] //system is being executed AFTER all transforms update
 public partial struct MoveCameraTarget : ISystem 
 { 
     public void OnUpdate(ref SystemState state) 
@@ -83,24 +81,20 @@ public partial struct MoveCameraTarget : ISystem
     }
 }
 
-
-[UpdateInGroup(typeof(InitializationSystemGroup))]
-public partial struct AimPointInitializationSystem : ISystem 
+[UpdateAfter(typeof(TransformSystemGroup))]
+public partial struct AimTargettingSystem : ISystem 
 {
-    public void OnCreate(ref SystemState state)
-    {
-        state.RequireForUpdate<InitializeAimPointTag>();
-    }
-
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var ent in SystemAPI.Query<PlayerTag>().WithEntityAccess())
+        foreach (var (cursorPos, transform, entity) in SystemAPI.Query<CursorWorldPosition, LocalToWorld>().WithAll<PlayerTag>().WithEntityAccess()) 
         {
-            
+
+
+            var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
+            sprtRenderer.flipX = (cursorPos.Value.x < transform.Position.x);
         }
     }
 }
-
 
 public partial class PlayerInputSystem : SystemBase
 {
@@ -124,12 +118,6 @@ public partial class PlayerInputSystem : SystemBase
         foreach (var direction in SystemAPI.Query<RefRW<CharacterMoveDirection>>().WithAll<PlayerTag>()) //retrives entities with both components
         {
             direction.ValueRW.Value = movementInput;
-        }
-
-        var aimInput = _input.Player.Aim.ReadValue<float>();
-        foreach (var aim in SystemAPI.Query<RefRW<AimDirection>>().WithAll<PlayerTag>())
-        { 
-            aim.ValueRW.Value = aimInput;
         }
     }
 }

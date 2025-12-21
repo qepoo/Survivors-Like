@@ -17,6 +17,7 @@ public struct InitializeCharacterFlag : IComponentData, IEnableableComponent { }
 public struct CharacterMoveDirection : IComponentData {
     public float2 Value;
 }
+
 public struct AimDirection : IComponentData
 {
     public float Value;
@@ -41,6 +42,7 @@ public struct AnimationUpdateRate : IComponentData {
 public struct AnimationTimeCounter : IComponentData {
     public float Value;
 }
+
 
 public class CharacterAuthoring : MonoBehaviour
 {
@@ -84,6 +86,7 @@ public class CharacterAuthoring : MonoBehaviour
     }
 }
 
+
 [UpdateInGroup(typeof(InitializationSystemGroup))] //system is being executed at the system initialization period
 public partial struct InitializeCharacter : ISystem //system turns off the property rsponsible for falling behind the texture
 {
@@ -97,25 +100,23 @@ public partial struct InitializeCharacter : ISystem //system turns off the prope
     }
 }
 
+
 public partial struct CharacterMovementSystem : ISystem
 {
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (velocity, moveDirection, speed, moveState, facingDirection, entity) in SystemAPI.Query<RefRW<PhysicsVelocity>, CharacterMoveDirection, CharacterMoveSpeed, RefRW<MovementState>, AimDirection>().WithEntityAccess())
+        foreach (var (velocity, moveDirection, speed, moveState, entity) in SystemAPI.Query<RefRW<PhysicsVelocity>, CharacterMoveDirection, CharacterMoveSpeed, RefRW<MovementState>>().WithEntityAccess())
         {
             var movement2D = speed.Value * moveDirection.Value;
             velocity.ValueRW.Linear = new float3(movement2D, 0f);
 
             float movementMagnitude = math.sqrt(math.square(movement2D.x) + math.square(movement2D.y));
             moveState.ValueRW.Value = (short)(math.abs(movementMagnitude) > (0.15f) ? 1 : 0);
-
-            var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
-
-            sprtRenderer.flipX = (facingDirection.Value < 0);
         }
     }
 }
+
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial struct AnimationUpdateSystem : ISystem
