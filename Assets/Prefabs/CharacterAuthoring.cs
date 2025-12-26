@@ -18,9 +18,11 @@ public struct CharacterMoveDirection : IComponentData {
     public float2 Value;
 }
 
-public struct AimDirection : IComponentData
+public struct CursorPosition : IComponentData
 {
-    public float Value;
+    public Vector2 Value;
+
+    public short direction;
 }
 
 public struct CharacterMoveSpeed : IComponentData {
@@ -58,7 +60,7 @@ public class CharacterAuthoring : MonoBehaviour
             var entity = GetEntity(TransformUsageFlags.Dynamic); //registrates new entity
             AddComponent<InitializeCharacterFlag>(entity); //adds a component to an entity
             AddComponent<CharacterMoveDirection>(entity);
-            AddComponent<AimDirection>(entity);
+            AddComponent<CursorPosition>(entity);
 
             AddComponent(entity, new CharacterMoveSpeed { 
                 Value = authoring.MoveSpeed 
@@ -106,7 +108,7 @@ public partial struct CharacterMovementSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (velocity, moveDirection, speed, moveState, entity) in SystemAPI.Query<RefRW<PhysicsVelocity>, CharacterMoveDirection, CharacterMoveSpeed, RefRW<MovementState>>().WithEntityAccess())
+        foreach (var (velocity, moveDirection, speed, moveState) in SystemAPI.Query<RefRW<PhysicsVelocity>, CharacterMoveDirection, CharacterMoveSpeed, RefRW<MovementState>>())
         {
             var movement2D = speed.Value * moveDirection.Value;
             velocity.ValueRW.Linear = new float3(movement2D, 0f);
@@ -123,22 +125,25 @@ public partial struct AnimationUpdateSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (animFrame, timeCntr, moveState, frameUpdateRate, entity) in SystemAPI.Query<RefRW<AnimationFrame>, RefRW<AnimationTimeCounter>,  RefRO<MovementState>, RefRO<AnimationUpdateRate>>().WithEntityAccess())
+        foreach (var (animFrame, timeCntr, moveState, frameUpdateRate, aimDirection, moveDirection, entity) in SystemAPI.Query<RefRW<AnimationFrame>, RefRW<AnimationTimeCounter>, MovementState, AnimationUpdateRate, CursorPosition, CharacterMoveDirection>().WithEntityAccess())
         {
             var resolver = SystemAPI.ManagedAPI.GetComponent<SpriteResolver>(entity);
 
-            timeCntr.ValueRW.Value += SystemAPI.Time.DeltaTime;
-            float animTreshold = 1f / frameUpdateRate.ValueRO.Value;
+            ref var time = ref timeCntr.ValueRW.Value;
+            ref var frame = ref animFrame.ValueRW.Value;
 
-            if (timeCntr.ValueRW.Value > animTreshold)
+            time += SystemAPI.Time.DeltaTime;
+            float animThreshold = 1f / frameUpdateRate.Value; //invert frame update rate to time per frame
+
+            if (time > animThreshold)
             {
-                animFrame.ValueRW.Value = (short)((animFrame.ValueRW.Value + 1) % 6);
-                timeCntr.ValueRW.Value -= animTreshold;
+                frame = Mathf.Round(moveDirection.Value.x) == aimDirection.direction ? (short)((frame + 1) % 6) : (short)((frame - 1) % 6);
+                time -= animThreshold;
             }
 
-            string category = moveState.ValueRO.Value == 0 ? "Idle" : "Run";
+            string category = moveState.Value == 0 ? "Idle" : "Run";
 
-            resolver.SetCategoryAndLabel($"{category}", $"{category}_{animFrame.ValueRW.Value}");
+            resolver.SetCategoryAndLabel($"{category}", $"{category}_{frame}");
         }
     }
 }

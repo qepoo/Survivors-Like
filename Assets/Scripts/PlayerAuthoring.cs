@@ -21,10 +21,6 @@ public struct CameraTarget : IComponentData {
     public UnityObjectRef<Transform> CameraTransform;
 }
 
-public struct CursorScreenPosition : IComponentData {
-    public float2 Value;
-}
-
 public class PlayerAuthoring : MonoBehaviour
 {
     private class Baker : Baker<PlayerAuthoring>
@@ -36,8 +32,6 @@ public class PlayerAuthoring : MonoBehaviour
             
             AddComponent<InitializeCameraTargetTag>(entity);
             AddComponent<CameraTarget>(entity);
-
-            AddComponent<CursorScreenPosition>(entity);
         }
     }   
 }
@@ -87,12 +81,14 @@ public partial struct AimTargettingSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (cursorPos, cameraMovementDelta, entity) in SystemAPI.Query<CursorScreenPosition, RefRO<PhysicsVelocity>>().WithAll<PlayerTag>().WithEntityAccess())
+        foreach (var (cursorPos, entity) in SystemAPI.Query<RefRW<CursorPosition>>().WithAll<PlayerTag>().WithEntityAccess())
         { 
             var screenMiddlePoint = Screen.width / 2;
 
             var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
-            sprtRenderer.flipX = (cursorPos.Value.x < screenMiddlePoint);
+            sprtRenderer.flipX = (cursorPos.ValueRO.Value.x < screenMiddlePoint);
+
+            cursorPos.ValueRW.direction = (short)(sprtRenderer.flipX == true ? -1 : 1);
         }
     }
 }
@@ -122,7 +118,7 @@ public partial class PlayerInputSystem : SystemBase
         }
 
         var aimInput = (float2)_input.Player.Aim.ReadValue<Vector2>();
-        foreach (var cursorPos in SystemAPI.Query<RefRW<CursorScreenPosition>>().WithAll<PlayerTag>())
+        foreach (var cursorPos in SystemAPI.Query<RefRW<CursorPosition>>().WithAll<PlayerTag>())
         { 
             cursorPos.ValueRW.Value = aimInput;
         }
