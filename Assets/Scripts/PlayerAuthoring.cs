@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
@@ -20,7 +21,7 @@ public struct CameraTarget : IComponentData {
     public UnityObjectRef<Transform> CameraTransform;
 }
 
-public struct CursorWorldPosition : IComponentData {
+public struct CursorScreenPosition : IComponentData {
     public float2 Value;
 }
 
@@ -36,7 +37,7 @@ public class PlayerAuthoring : MonoBehaviour
             AddComponent<InitializeCameraTargetTag>(entity);
             AddComponent<CameraTarget>(entity);
 
-            AddComponent<CursorWorldPosition>(entity);
+            AddComponent<CursorScreenPosition>(entity);
         }
     }   
 }
@@ -86,12 +87,12 @@ public partial struct AimTargettingSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (cursorPos, transform, entity) in SystemAPI.Query<CursorWorldPosition, LocalToWorld>().WithAll<PlayerTag>().WithEntityAccess()) 
-        {
-
+        foreach (var (cursorPos, cameraMovementDelta, entity) in SystemAPI.Query<CursorScreenPosition, RefRO<PhysicsVelocity>>().WithAll<PlayerTag>().WithEntityAccess())
+        { 
+            var screenMiddlePoint = Screen.width / 2;
 
             var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
-            sprtRenderer.flipX = (cursorPos.Value.x < transform.Position.x);
+            sprtRenderer.flipX = (cursorPos.Value.x < screenMiddlePoint);
         }
     }
 }
@@ -118,6 +119,12 @@ public partial class PlayerInputSystem : SystemBase
         foreach (var direction in SystemAPI.Query<RefRW<CharacterMoveDirection>>().WithAll<PlayerTag>()) //retrives entities with both components
         {
             direction.ValueRW.Value = movementInput;
+        }
+
+        var aimInput = (float2)_input.Player.Aim.ReadValue<Vector2>();
+        foreach (var cursorPos in SystemAPI.Query<RefRW<CursorScreenPosition>>().WithAll<PlayerTag>())
+        { 
+            cursorPos.ValueRW.Value = aimInput;
         }
     }
 }
