@@ -137,7 +137,9 @@ public partial struct AnimationUpdateSystem : ISystem
 
             if (time > animThreshold)
             {
-                frame = Mathf.Round(moveDirection.Value.x) == aimDirection.direction ? (short)((frame + 1) % 6) : (short)((frame - 1) % 6);
+                frame = moveState.Value == 0 || moveDirection.Value.x == 0 ? (short)((frame + 1) % 6) : 
+                (short)(Mathf.Round(moveDirection.Value.x) == aimDirection.direction ? ((frame + 1) % 6) : ((frame + 5) % 6));
+
                 time -= animThreshold;
             }
 
