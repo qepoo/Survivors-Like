@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Entities;
@@ -8,6 +9,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Rendering.VirtualTexturing;
 using UnityEngine.U2D.Animation;
@@ -18,19 +20,18 @@ public struct CharacterMoveDirection : IComponentData {
     public float2 Value;
 }
 
-public struct CursorPosition : IComponentData
-{
-    public Vector2 Value;
-
-    public short direction;
-}
-
 public struct CharacterMoveSpeed : IComponentData {
     public float Value;
 }
 
 public struct MovementState : IComponentData {
     public short Value;
+}
+
+public struct AimPosition : IComponentData {
+    public Vector2 Value;
+
+    public short direction; 
 }
 
 public struct AnimationFrame : IComponentData {
@@ -51,16 +52,18 @@ public class CharacterAuthoring : MonoBehaviour
     public float MoveSpeed;
     public float FrameUpdateRate;
     public SpriteResolver spriteResolver;
-    public SpriteLibrary spriteLibrary; 
+    public SpriteLibrary spriteLibrary;
+
 
     private class Baker : Baker<CharacterAuthoring>
     {
         public override void Bake(CharacterAuthoring authoring)
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic); //registrates new entity
+
             AddComponent<InitializeCharacterFlag>(entity); //adds a component to an entity
             AddComponent<CharacterMoveDirection>(entity);
-            AddComponent<CursorPosition>(entity);
+            AddComponent<AimPosition>(entity);
 
             AddComponent(entity, new CharacterMoveSpeed { 
                 Value = authoring.MoveSpeed 
@@ -103,9 +106,9 @@ public partial struct InitializeCharacter : ISystem //system turns off the prope
 }
 
 
+[BurstCompile]
 public partial struct CharacterMovementSystem : ISystem
-{
-    [BurstCompile]
+{ 
     public void OnUpdate(ref SystemState state)
     {
         foreach (var (velocity, moveDirection, speed, moveState) in SystemAPI.Query<RefRW<PhysicsVelocity>, CharacterMoveDirection, CharacterMoveSpeed, RefRW<MovementState>>())
@@ -125,7 +128,7 @@ public partial struct AnimationUpdateSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (animFrame, timeCntr, moveState, frameUpdateRate, aimDirection, moveDirection, entity) in SystemAPI.Query<RefRW<AnimationFrame>, RefRW<AnimationTimeCounter>, MovementState, AnimationUpdateRate, CursorPosition, CharacterMoveDirection>().WithEntityAccess())
+        foreach (var (animFrame, timeCntr, moveState, frameUpdateRate, aimDirection, moveDirection, entity) in SystemAPI.Query<RefRW<AnimationFrame>, RefRW<AnimationTimeCounter>, MovementState, AnimationUpdateRate, AimPosition, CharacterMoveDirection>().WithEntityAccess())
         {
             var resolver = SystemAPI.ManagedAPI.GetComponent<SpriteResolver>(entity);
 

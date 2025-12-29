@@ -76,29 +76,31 @@ public partial struct MoveCameraTarget : ISystem
     }
 }
 
+
 [UpdateAfter(typeof(TransformSystemGroup))]
-public partial struct AimTargettingSystem : ISystem 
+public partial struct AimTargettingSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (cursorPos, entity) in SystemAPI.Query<RefRW<CursorPosition>>().WithAll<PlayerTag>().WithEntityAccess())
-        { 
+        foreach (var (aimPos, entity) in SystemAPI.Query<RefRW<AimPosition>>().WithAll<PlayerTag>().WithEntityAccess())
+        {
             var screenMiddlePoint = Screen.width / 2;
 
             var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
-            sprtRenderer.flipX = (cursorPos.ValueRO.Value.x < screenMiddlePoint);
+            sprtRenderer.flipX = (aimPos.ValueRO.Value.x < screenMiddlePoint);
 
-            cursorPos.ValueRW.direction = (short)(sprtRenderer.flipX == true ? -1 : 1);
+            aimPos.ValueRW.direction = (short)(sprtRenderer.flipX == true ? -1 : 1);
         }
     }
 }
+
 
 public partial class PlayerInputSystem : SystemBase
 {
     private PlayerInputs _input; //creates input map instance
 
     protected override void OnCreate()
-    { 
+    {   
         _input = new PlayerInputs();
         _input.Enable();
     }
@@ -118,7 +120,7 @@ public partial class PlayerInputSystem : SystemBase
         }
 
         var aimInput = (float2)_input.Player.Aim.ReadValue<Vector2>();
-        foreach (var cursorPos in SystemAPI.Query<RefRW<CursorPosition>>().WithAll<PlayerTag>())
+        foreach (var cursorPos in SystemAPI.Query<RefRW<AimPosition>>().WithAll<PlayerTag>())
         { 
             cursorPos.ValueRW.Value = aimInput;
         }

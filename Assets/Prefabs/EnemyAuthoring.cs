@@ -20,20 +20,63 @@ class EnemyAuthoring : MonoBehaviour
 }
 
 [BurstCompile]
-[UpdateAfter(typeof(TransformSystemGroup))]
 public partial struct PlayerFollowSystem : ISystem
+{
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PlayerTag>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        var plrEnt = SystemAPI.GetSingletonEntity<PlayerTag>();
+        var plrPos = SystemAPI.GetComponent<LocalTransform>(plrEnt).Position.xy;
+
+        var moveToPlayerFollowJob = new PlayerFollowJob
+        {
+            playerPos = plrPos
+        };
+
+        state.Dependency = moveToPlayerFollowJob.ScheduleParallel(state.Dependency);
+    }
+}
+
+
+[BurstCompile]
+[UpdateAfter(typeof(TransformSystemGroup))]
+public partial struct LookDirectionSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var playerPos in SystemAPI.Query<LocalToWorld>().WithAll<PlayerTag>())
-        {
-            foreach (var (enemyPos, enemyDirection) in SystemAPI.Query<LocalToWorld, RefRW<CharacterMoveDirection>>().WithAll<EnemyTag>()) //dont nest queries, store player pos once and re-use it
-            {
-                float x = playerPos.Position.x - enemyPos.Position.x; //float2-float2 (update)
-                float y = playerPos.Position.y - enemyPos.Position.y;
+        bool playerFound = false;
+        float3 playerPos = float3.zero;
 
-                enemyDirection.ValueRW.Value = math.normalizesafe(new float2 (x, y));
+        if (!playerFound)
+        {
+            foreach (var plrPos in SystemAPI.Query<LocalToWorld>().WithAll<PlayerTag>())
+            {
+                playerFound = true;
+                playerPos = plrPos.Position;
             }
         }
+
+        foreach (var (enemyPos, entity) in SystemAPI.Query<LocalToWorld>().WithAll<EnemyTag>().WithEntityAccess())
+        {
+            var sprtRenderer = SystemAPI.ManagedAPI.GetComponent<SpriteRenderer>(entity);
+            sprtRenderer.flipX = (enemyPos.Position.x < playerPos.x);
+        }
+    }
+}
+
+[BurstCompile]
+[WithAll(typeof(EnemyTag))]
+public partial struct PlayerFollowJob : IJobEntity
+{
+    public float2 playerPos;
+
+    private void Execute(ref CharacterMoveDirection direction, in LocalTransform enemyPos)
+    {
+        float2 directionVector = playerPos - enemyPos.Position.xy;
+        direction.Value = math.normalizesafe(directionVector);
     }
 }
