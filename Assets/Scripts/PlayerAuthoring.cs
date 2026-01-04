@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -62,7 +63,7 @@ public partial struct CameraInitializationSystem : ISystem
 }
 
 
-[UpdateAfter(typeof(TransformSystemGroup    ))] //system is being executed AFTER all transforms update
+[UpdateAfter(typeof(TransformSystemGroup))] //system is being executed AFTER all transforms update
 public partial struct MoveCameraTarget : ISystem 
 { 
     public void OnUpdate(ref SystemState state) 

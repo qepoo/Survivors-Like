@@ -10,6 +10,7 @@ using Unity.Physics;
 using Unity.Rendering;
 using Unity.Transforms;
 using UnityEditor.Experimental.GraphView;
+using UnityEditor.Experimental.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering.VirtualTexturing;
 using UnityEngine.U2D.Animation;
@@ -46,6 +47,15 @@ public struct AnimationTimeCounter : IComponentData {
     public float Value;
 }
 
+public struct CharacterHP : IComponentData {
+    public float Max;
+    public float Current;
+}
+
+public struct ThisFrameDamageBuffer : IBufferElementData {
+    public float Value;
+}
+
 
 public class CharacterAuthoring : MonoBehaviour
 {
@@ -53,6 +63,7 @@ public class CharacterAuthoring : MonoBehaviour
     public float FrameUpdateRate;
     public SpriteResolver spriteResolver;
     public SpriteLibrary spriteLibrary;
+    public float MaxHP;
 
 
     private class Baker : Baker<CharacterAuthoring>
@@ -85,8 +96,19 @@ public class CharacterAuthoring : MonoBehaviour
                 Value = 0
             });
 
+            AddComponent(entity, new CharacterHP
+            {
+                Max = authoring.MaxHP,
+                Current = authoring.MaxHP
+            });
+
             AddComponentObject(entity, authoring.spriteResolver);
             AddComponentObject(entity, authoring.spriteLibrary);
+
+            AddBuffer<ThisFrameDamageBuffer>(entity);
+
+            AddComponent<DestroyEntityFlag>(entity);
+            SetComponentEnabled<DestroyEntityFlag>(entity, false);
         }
     }
 }
@@ -149,6 +171,29 @@ public partial struct AnimationUpdateSystem : ISystem
             string category = moveState.Value == 0 ? "Idle" : "Run";
 
             resolver.SetCategoryAndLabel($"{category}", $"{category}_{frame}");
+        }
+    }
+}
+
+[BurstCompile]
+public partial struct ProcessDamageThisFrame : ISystem
+{
+    public void OnUpdate(ref SystemState state)
+    {
+        foreach (var (HP, damageThisFrame, entity) in SystemAPI.Query<RefRW<CharacterHP>, DynamicBuffer<ThisFrameDamageBuffer>>().WithEntityAccess())
+        {
+            if (damageThisFrame.IsEmpty) continue;
+
+            foreach (var damage in damageThisFrame)
+            {
+                HP.ValueRW.Current -= damage.Value;
+            }
+            damageThisFrame.Clear();
+
+            if (HP.ValueRO.Current <= 0f)
+            {
+                SystemAPI.SetComponentEnabled<DestroyEntityFlag>(entity, true);
+            }
         }
     }
 }

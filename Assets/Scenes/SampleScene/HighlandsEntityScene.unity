@@ -307,9 +307,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteResolver
   m_CategoryHash: 1.0429618e-14
-  m_labelHash: 4.420019e-24
+  m_labelHash: 0.0000049058085
   m_SpriteKey: 0
-  m_SpriteHash: 650405266
+  m_SpriteHash: 147457214
 --- !u!212 &425675137
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -357,7 +357,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 7707280547138618000, guid: 76032930d7289f54a8548189ab59c10c, type: 3}
+  m_Sprite: {fileID: 2958293113218606298, guid: 76032930d7289f54a8548189ab59c10c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -384,7 +384,7 @@ BoxCollider:
     m_Bits: 0
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
+  m_ProvidesContacts: 1
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 2.0587227, y: 1.2048794, z: 1}
@@ -398,7 +398,7 @@ Transform:
   m_GameObject: {fileID: 425675133}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.288, y: 1.335, z: 0.15}
+  m_LocalPosition: {x: 3.7294, y: 1.7661, z: 0.15}
   m_LocalScale: {x: 0.22, y: 0.22, z: 0.22}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -420,7 +420,7 @@ MonoBehaviour:
   FrameUpdateRate: 4
   spriteResolver: {fileID: 425675136}
   spriteLibrary: {fileID: 425675135}
-  hp: 10
+  MaxHP: 10
 --- !u!114 &425675141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -433,6 +433,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74ce61bc5fccfb14391369f19b1e80c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAuthoring
+  damageValue: 5
+  cooldownTime: 0.5
 --- !u!1 &684002320
 GameObject:
   m_ObjectHideFlags: 0
@@ -486,8 +488,8 @@ Transform:
   m_GameObject: {fileID: 684002320}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.3136, y: -0.1963, z: 0.15}
-  m_LocalScale: {x: 0.46, y: 0.4782139, z: 0.52698934}
+  m_LocalPosition: {x: 0.135, y: -0.45, z: 0.15}
+  m_LocalScale: {x: 0.46, y: 0.47821394, z: 0.52698934}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -508,7 +510,7 @@ MonoBehaviour:
   FrameUpdateRate: 8
   spriteResolver: {fileID: 684002329}
   spriteLibrary: {fileID: 684002328}
-  hp: 100
+  MaxHP: 100
 --- !u!54 &684002326
 Rigidbody:
   m_ObjectHideFlags: 0
