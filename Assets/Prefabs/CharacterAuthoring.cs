@@ -180,7 +180,7 @@ public partial struct ProcessDamageThisFrame : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (HP, damageThisFrame, entity) in SystemAPI.Query<RefRW<CharacterHP>, DynamicBuffer<ThisFrameDamageBuffer>>().WithEntityAccess())
+        foreach (var (HP, damageThisFrame, entity) in SystemAPI.Query<RefRW<CharacterHP>, DynamicBuffer<ThisFrameDamageBuffer>>().WithPresent(DestroyEntityFlag).WithEntityAccess())
         {
             if (damageThisFrame.IsEmpty) continue;
 
